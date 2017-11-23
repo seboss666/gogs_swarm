@@ -7,7 +7,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /home/docker/postgresql/data/:/var/lib/postgresql/data/
+      - /home/seboss666/docker/postgresql/data/:/var/lib/postgresql/data/
     deploy: 
       mode: global
       restart_policy:
@@ -21,7 +21,7 @@ services:
       - "10022:22"
       - "10080:3000"
     volumes:
-      - /home/docker/gogs/:/var/gogs/
+      - /home/seboss666/docker/gogs/:/var/gogs/
     deploy:
       mode: global
       restart_policy:
