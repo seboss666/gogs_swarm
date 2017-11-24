@@ -23,6 +23,8 @@ services:
     ports:
       - "10022:22"
       - "10080:3000"
+    links:
+      - pgdb
     volumes:
       - /home/seboss666/docker/gogs/:/var/gogs/
     deploy:
