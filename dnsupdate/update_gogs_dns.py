@@ -19,7 +19,7 @@ while True:
 	print(currentHostIP)
 
 	#A remplacer par le module docker si y'a moyen de le faire fonctionner un jour
-	newHost=subprocess.check_output("/usr/bin/docker service ps gs_gogs --format={{.Node}}", stderr=subprocess.STDOUT, shell=True).strip().decode("utf-8")
+	newHost=subprocess.check_output("/usr/bin/docker service ps gs_gogs --format={{.Node}} --filter \"desired-state=running\"", stderr=subprocess.STDOUT, shell=True).strip().decode("utf-8")
 	print(newHost)
 
 	hostList = { 'swarm1':"192.168.1.11", 'swarm2': "192.168.1.43", 'swarmleader':"192.168.1.9" }
