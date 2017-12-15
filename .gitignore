@@ -1,2 +1,3 @@
 ovh.conf
-dns.ini	
+dnsupdate/dns.ini
+dnsupdate/ovh.conf
