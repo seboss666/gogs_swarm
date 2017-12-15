@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#Seboss666
 # Script to update OVH DNS entry to identify host running gogs instance, for SSH purposes
 
-#import json
-#import subprocess
-import time
+from time import sleep
 import configparser
 import re
 import docker
@@ -14,55 +12,64 @@ import ovh
 Config = configparser.ConfigParser()
 Config.read("./dns.ini")
 
-dnsInfo = Config['OvhDns']
-dnsUrl = '/domain/zone/'+dnsInfo['Domain']+"/"
-dnsUrlRecord = dnsUrl+'record'
-dnsSubDomain = dnsInfo['SubDomain']
-dnsSubDomainUrl = dnsUrlRecord+"/"+dnsSubDomain
+DNSINFO = Config['OvhDns']
+DNSURL = '/domain/zone/'+DNSINFO['Domain']+"/"
+DNSURLRECORD = DNSURL+'record'
+DNSSUBDOMAIN = DNSINFO['SubDomain']
+DNSSUBDOMAINURL = DNSURLRECORD+"/"+DNSSUBDOMAIN
 
-client = ovh.Client()
+dns = ovh.Client()
 dock = docker.from_env()
 
-while True:
+#Retrieve IP from OVH DNS entry
+def getsubdomainip(subdomain):
+	subDomainInfo = dns.get(DNSURLRECORD, fieldType='A', subDomain=subdomain,)
+	subDomainInfo = (str(subDomainInfo).replace('[','').replace(']',''))
 
-	subDomainCurrent = client.get(dnsUrlRecord, fieldType='A', subDomain=dnsSubDomain,)
-
-	subDomainCurrent = (str(subDomainCurrent).replace('[','').replace(']',''))
-
-	currentHost = client.get(dnsUrlRecord+'/'+subDomainCurrent)
-
+	currentHost = dns.get(DNSURLRECORD+'/'+subDomainInfo)
 	currentHostIP = currentHost['target']
 
-	print(currentHostIP)
+	return currentHostIP
 
-	servs = dock.services.list()
-	servList = []
-	for serv in servs:
-		servList.append(serv.name)
+#Update OVH DNS entry with new IP
+def updatesubdomainip(subdomain,ip):
+	subDomainInfo = dns.get(DNSURLRECORD, fieldType='A', subDomain=subdomain,)
+	subDomainInfo = (str(subDomainInfo).replace('[','').replace(']',''))
+	dnsUpdate = dns.put(DNSURLRECORD+'/'+subDomainInfo, target=ip, ttl=60, subDomain=subdomain,)	
+	result = dns.post(DNSURL+'refresh')
+	return result
 
-	#Le service doit matcher le sous-domaine
-	servMatch = re.compile(".*"+dnsSubDomain)
+# Default main
+if __name__ == "__main__":
 
-	for serv in servList:
-		if servMatch.match(serv):
-			servName = servMatch.match(serv).group(0)
+	while True:
 
-	newHost = dock.nodes.get(dock.services.get(servName).tasks(filters={'desired-state': 'running',})[0]['NodeID']).attrs['Description']['Hostname']	
+		currentIP = getsubdomainip(DNSSUBDOMAIN)
 
-	print(newHost)
+		print("IP actuelle : ", currentIP)
 
-	subDomainNew = client.get(dnsUrlRecord, fieldType='A', subDomain=newHost,)
+		servs = dock.services.list()
+		servList = []
+		for serv in servs:
+			servList.append(serv.name)
 
-	subDomainNew = (str(subDomainNew).replace('[','').replace(']',''))
+		#I'm usig the subdomain as base for service discovery
+		servMatch = re.compile(".*"+DNSSUBDOMAIN)
 
-	newHostDns = client.get(dnsUrlRecord+'/'+subDomainNew)
+		for serv in servList:
+			if servMatch.match(serv):
+				servName = servMatch.match(serv).group(0)
 
-	print(newHostDns['target'])
+		newHost = dock.nodes.get(dock.services.get(servName).tasks(filters={'desired-state': 'running',})[0]['NodeID']).attrs['Description']['Hostname']	
 
-	# if hostList[newHost] != currentHostIP:
-	# 	dnsUpdate = client.put('/domain/zone/seboss666.ovh/record/1439796959', target=hostList[newHost], ttl=60, subDomain='gogs',)
-	# 	print(dnsUpdate)
+		print("Hôte en cours d'exécution : ", newHost)
 
-	# 	result = client.post('/domain/zone/seboss666.ovh/refresh')
-	# 	print(result)
-	time.sleep(60)
+		newHostIP = getsubdomainip(newHost)
+
+		#Update DNS if host changed
+		if newHostIP != currentIP:
+			print("Nouvelle IP : ", newHostIP)
+			updatesubdomainip(DNSSUBDOMAIN,newHostIP)
+			print("Zone DNS mise à jour")
+
+		sleep(60)
