@@ -10,7 +10,7 @@ import docker
 import ovh
 
 Config = configparser.ConfigParser()
-Config.read("./dns.ini")
+Config.read("/app/dns.ini")
 
 DNSINFO = Config['OvhDns']
 DNSURL = '/domain/zone/'+DNSINFO['Domain']+"/"
@@ -42,7 +42,7 @@ def updatesubdomainip(subdomain,ip):
 # Default main
 if __name__ == "__main__":
 
-	while True:
+#	while True:
 
 		currentIP = getsubdomainip(DNSSUBDOMAIN)
 
@@ -72,4 +72,4 @@ if __name__ == "__main__":
 			updatesubdomainip(DNSSUBDOMAIN,newHostIP)
 			print("Zone DNS mise à jour")
 
-		sleep(60)
+#		sleep(60)

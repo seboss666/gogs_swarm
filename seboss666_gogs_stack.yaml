@@ -24,12 +24,16 @@ services:
 
   dnsupdate:
     image: registry.seboss666.ovh/ovhdnsupdate:latest
+    environment:
+      - "CRON_SCHEDULE=* * * * *"
     networks:
       - sebnet
     volumes:
     - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       replicas: 1
+      restart_policy:
+        condition: any
       placement:
         constraints:
           - node.role == manager

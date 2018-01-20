@@ -1,9 +1,14 @@
 FROM frolvlad/alpine-python3
 
-WORKDIR /usr/src/app
-#RUN apk add -U --no-cache docker &&\
-#	pip install --no-cache-dir ovh
-RUN pip install --no-cache-dir ovh docker
-COPY . .
+ADD files/* /app/
 
-CMD [ "python", "./update_gogs_dns.py" ]
+RUN chmod +x /app/init.sh /app/update_gogs_dns.py
+
+WORKDIR /app/
+CMD ["/app/init.sh"]
+
+HEALTHCHECK --interval=30s \
+    --timeout=10s \
+    --start-period=30s \
+    --retries=3 \
+    CMD pgrep -f "crond" || exit 1
