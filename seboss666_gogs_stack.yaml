@@ -1,12 +1,19 @@
-version: '3'
+version: "3.2"
 networks:
   sebnet:
     driver: overlay
 
+volumes:
+  gogs_data:
+    driver_opts:
+      type: nfs
+      o: "addr=192.168.1.200,rw,nfsvers=3,nolock,soft,exec"
+      device: ":/volume1/Docker/gogs"
+
 services:
 
   gogs:
-    image: gogs/gogs:latest
+    image: gogs/gogs:0.11.91
     environment:
       - "PUID:1001"
       - "PGID:1001"
@@ -16,7 +23,9 @@ services:
       - "10022:22"
       - "10080:3000"
     volumes:
-      - /home/seboss666/docker/gogs/:/data/
+      - type: volume
+        source: gogs_data
+        target: /data
     deploy:
       replicas: 1
       restart_policy:
